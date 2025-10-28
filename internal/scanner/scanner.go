@@ -300,14 +300,34 @@ func (s *Scanner) extractSnippet(body, pattern string) string {
 
 // printResult prints a single scan result with colors
 func (s *Scanner) printResult(result types.Result) {
-	// Only show detailed output for vulnerable subdomains
-	if result.Vulnerable && len(result.Evidence) > 0 {
-		// Print vulnerable result with details
-		fmt.Printf("\033[32m[VULNERABLE]\033[0m %s - %s", result.Subdomain, result.Evidence[0].Service)
+	// Color coding based on vulnerability status
+	var color string
+	var status string
 
-		// Show the specific pattern that matched
+	switch result.Status {
+	case "vulnerable":
+		color = "\033[32m" // Green
+		status = "VULNERABLE"
+	case "not vulnerable":
+		color = "\033[31m" // Red
+		status = "NOT VULNERABLE"
+	case "error":
+		color = "\033[33m" // Yellow
+		status = "ERROR"
+	default:
+		color = "\033[34m" // Blue
+		status = strings.ToUpper(result.Status)
+	}
+
+	// Print status and subdomain
+	fmt.Printf("%s[%s]\033[0m %s", color, status, result.Subdomain)
+
+	// Show details only for vulnerable subdomains
+	if result.Vulnerable && len(result.Evidence) > 0 {
+		fmt.Printf(" - %s", result.Evidence[0].Service)
+
+		// Show the specific pattern that matched (truncated)
 		if result.Evidence[0].Pattern != "" {
-			// Truncate pattern if too long
 			pattern := result.Evidence[0].Pattern
 			if len(pattern) > 50 {
 				pattern = pattern[:47] + "..."
@@ -318,9 +338,25 @@ func (s *Scanner) printResult(result types.Result) {
 		if len(result.Evidence) > 1 {
 			fmt.Printf(" (+%d more)", len(result.Evidence)-1)
 		}
-		fmt.Println()
 	}
-	// For not vulnerable and errors, don't print anything (silent)
+
+	// Show simplified error message for errors
+	if result.Status == "error" && result.Error != "" {
+		// Simplify error message
+		errorMsg := result.Error
+		if strings.Contains(errorMsg, "request failed after") {
+			errorMsg = "request failed"
+		} else if strings.Contains(errorMsg, "no such host") {
+			errorMsg = "invalid domain"
+		} else if strings.Contains(errorMsg, "timeout") {
+			errorMsg = "timeout"
+		} else if len(errorMsg) > 30 {
+			errorMsg = errorMsg[:27] + "..."
+		}
+		fmt.Printf(" - %s", errorMsg)
+	}
+
+	fmt.Println()
 }
 
 // Cleanup cleans up resources
