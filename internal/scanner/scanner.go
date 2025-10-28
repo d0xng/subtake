@@ -213,11 +213,27 @@ func (s *Scanner) tryProtocol(subdomain, protocol string) *types.HTTPResponse {
 
 	resp := s.httpClient.Get(url)
 
+	// Only keep essential headers
+	essentialHeaders := make(map[string]string)
+	importantHeaders := []string{"Server", "Content-Type", "Content-Length", "X-GitHub-Request-Id", "X-Served-By"}
+
+	for _, header := range importantHeaders {
+		if value, exists := resp.Headers[header]; exists {
+			essentialHeaders[header] = value
+		}
+	}
+
+	// Truncate body to first 1000 characters for storage
+	body := resp.Body
+	if len(body) > 1000 {
+		body = body[:1000] + "... [truncated]"
+	}
+
 	httpResp := &types.HTTPResponse{
 		URL:        url,
 		StatusCode: resp.StatusCode,
-		Headers:    resp.Headers,
-		Body:       resp.Body,
+		Headers:    essentialHeaders,
+		Body:       body,
 	}
 
 	if resp.Error != nil {

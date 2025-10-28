@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subdomain Takeover PoC</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', 'Monaco', monospace;
+            background: #000;
+            color: #00aa00;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .terminal {
+            background: #000;
+            border: 1px solid #333;
+            padding: 40px;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .prompt {
+            color: #00aa00;
+            font-weight: bold;
+        }
+
+        .command {
+            color: #ffffff;
+        }
+
+        .output {
+            color: #00aa00;
+            margin: 20px 0;
+            font-size: 18px;
+        }
+
+        .main-message {
+            color: #00aa00;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 30px 0;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background: #00aa00;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal">
+        <div class="line output">
+            [!] d0x was here
+        </div>
+        
+        <div class="main-message">
+            YOUR SUBDOMAIN IS MINE NOW!
+        </div>
+        
+        <div class="line">
+            <span class="cursor"></span>
+        </div>
+        
+        <div class="subtitle">
+            Proof of Concept
+        </div>
+    </div>
+
+    <script>
+        // Console messages
+        console.log('%c[!] SUBDOMAIN TAKEOVER DETECTED!', 'color: #00ff00; font-size: 16px; font-weight: bold;');
+        console.log('%cThis is a proof of concept for educational purposes.', 'color: #888; font-size: 12px;');
+    </script>
+</body>
+</html>
