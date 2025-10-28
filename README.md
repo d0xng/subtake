@@ -5,11 +5,13 @@ SubTake is a powerful CLI tool written in Go for detecting subdomain takeover vu
 ## Features
 
 - **Comprehensive Fingerprint Database**: Built-in fingerprints for major hosting services (GitHub Pages, Vercel, Netlify, AWS S3, CloudFront, Fastly, Heroku, GitLab Pages, Azure, Firebase, Surge, and more)
+- **Real-time Output**: Live terminal output showing scan results as they happen
 - **Custom Fingerprints**: Support for custom fingerprint files in JSON/YAML format
 - **Concurrent Scanning**: Worker pool with configurable concurrency for fast scanning
 - **Rate Limiting**: Built-in rate limiting to avoid overwhelming target servers
 - **Multiple Input Methods**: Single subdomain or file with multiple subdomains
 - **Flexible Output**: JSON output to file or stdout with colored terminal output
+- **DNS Verification**: Built-in `dig` command to verify vulnerable subdomains
 - **Robust Error Handling**: Retry logic, timeout handling, and detailed error reporting
 - **TLS Support**: Configurable TLS verification with insecure mode option
 
@@ -39,6 +41,34 @@ make build
 go install github.com/yourusername/subtake@latest
 ```
 
+## Quick Start
+
+Here's what SubTake looks like in action:
+
+```bash
+$ subtake scan -l subdomains.txt
+
+███████╗██╗   ██╗██████╗ ████████╗ █████╗ ██╗  ██╗███████╗
+██╔════╝██║   ██║██╔══██╗╚══██╔══╝██╔══██╗██║ ██╔╝██╔════╝
+███████╗██║   ██║██████╔╝   ██║   ███████║█████╔╝ █████╗  
+╚════██║██║   ██║██╔══██╗   ██║   ██╔══██║██╔═██╗ ██╔══╝  
+███████║╚██████╔╝██████╔╝   ██║   ██║  ██║██║  ██╗███████╗
+╚══════╝ ╚═════╝ ╚═════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝
+
+                                            created by d0x
+
+[VULNERABLE] test.example.com - GitHub Pages ("There isn't a GitHub Pages site here.")
+[NOT VULNERABLE] api.example.com
+[NOT VULNERABLE] www.example.com
+[ERROR] invalid.example.com - invalid domain
+[VULNERABLE] staging.example.com - Vercel ("Project not found")
+[NOT VULNERABLE] admin.example.com
+[VULNERABLE] dev.example.com - GitHub Pages/Firebase ("Site not found")
+
+Scan completed! Found 3 vulnerable subdomains.
+Results saved to results.json
+```
+
 ## Usage
 
 ### Basic Usage
@@ -52,6 +82,9 @@ subtake scan -l subdomains.txt
 
 # Save results to a file
 subtake scan -l subdomains.txt -o results.json
+
+# Verify vulnerable subdomains with DNS lookup
+subtake dig -i results.json -o dns-results.json
 ```
 
 ### Advanced Usage
@@ -76,7 +109,9 @@ subtake scan -l subdomains.txt --rate 2
 subtake scan example.com --timeout 15 --timeout-retries 3
 ```
 
-## Command Line Options
+## Commands
+
+### `scan` - Scan subdomains for takeover vulnerabilities
 
 | Flag | Description | Default |
 |------|-------------|---------|
@@ -89,6 +124,13 @@ subtake scan example.com --timeout 15 --timeout-retries 3
 | `--timeout-retries` | Number of retries on timeout | 1 |
 | `--timeout` | Request timeout in seconds | 10 |
 | `-v, --verbose` | Verbose output for debugging | false |
+
+### `dig` - Verify vulnerable subdomains using DNS lookup
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `-i, --input` | Input JSON file with scan results | - |
+| `-o, --output` | Output file for DNS results (JSON format) | stdout |
 
 ## Input File Format
 
@@ -218,6 +260,9 @@ subtake scan test.example.com
 
 # Scan from file
 subtake scan -l subdomains.txt
+
+# Verify vulnerable subdomains
+subtake dig -i results.json
 ```
 
 ### Advanced Scanning
@@ -231,6 +276,9 @@ subtake scan -l subdomains.txt \
   --timeout-retries 2 \
   -o results.json \
   -v
+
+# Verify vulnerable subdomains and save DNS results
+subtake dig -i results.json -o dns-results.json
 ```
 
 ### Custom Fingerprints
@@ -242,18 +290,7 @@ subtake scan -l subdomains.txt --fingerprints my-fingerprints.json
 
 ## Testing
 
-Run the test suite:
-
-```bash
-# Run all tests
-go test ./...
-
-# Run tests with coverage
-go test -cover ./...
-
-# Run specific test package
-go test ./tests/...
-```
+This tool is designed for bug bounty and penetration testing purposes. No unit tests are included as the tool focuses on practical subdomain takeover detection rather than comprehensive testing infrastructure.
 
 ## Development
 
@@ -262,18 +299,20 @@ go test ./tests/...
 ```
 subtake/
 ├── cmd/                    # CLI commands
-│   ├── root.go            # Root command
-│   └── scan.go            # Scan command
+│   ├── root.go            # Root command with banner
+│   ├── scan.go            # Scan command
+│   └── dig.go             # DNS verification command
 ├── internal/              # Internal packages
 │   ├── config/           # Configuration
 │   ├── fingerprints/     # Fingerprint system
 │   ├── httpclient/       # HTTP client
-│   ├── output/           # Output formatting
-│   └── scanner/          # Scanner logic
-├── tests/                # Test files
+│   ├── scanner/          # Scanner logic
+│   └── types/            # Type definitions
 ├── fingerprints/         # Default fingerprints
 ├── main.go              # Main entry point
 ├── go.mod              # Go module file
+├── Makefile            # Build automation
+├── poc-subdomain-takeover.html  # PoC HTML file
 └── README.md           # This file
 ```
 

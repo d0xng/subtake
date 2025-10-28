@@ -38,6 +38,8 @@ func init() {
 }
 
 func runDig(cmd *cobra.Command, args []string) {
+	// Show banner
+	showBanner()
 	// Load scan results from JSON file
 	results, err := loadScanResults(digInputFile)
 	if err != nil {

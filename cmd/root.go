@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -10,6 +11,22 @@ var (
 	verbose bool
 )
 
+// showBanner displays the tool banner
+func showBanner() {
+	banner := `
+███████╗██╗   ██╗██████╗ ████████╗ █████╗ ██╗  ██╗███████╗
+██╔════╝██║   ██║██╔══██╗╚══██╔══╝██╔══██╗██║ ██╔╝██╔════╝
+███████╗██║   ██║██████╔╝   ██║   ███████║█████╔╝ █████╗  
+╚════██║██║   ██║██╔══██╗   ██║   ██╔══██║██╔═██╗ ██╔══╝  
+███████║╚██████╔╝██████╔╝   ██║   ██║  ██║██║  ██╗███████╗
+╚══════╝ ╚═════╝ ╚═════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝
+
+                                            created by d0x
+
+`
+	fmt.Print(banner)
+}
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "subtake",
@@ -18,6 +35,7 @@ var rootCmd = &cobra.Command{
 It scans subdomains against known hosting service fingerprints to identify
 potential takeover opportunities.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		showBanner()
 		if len(args) == 0 {
 			cmd.Help()
 			os.Exit(1)

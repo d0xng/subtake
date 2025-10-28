@@ -52,6 +52,8 @@ func init() {
 }
 
 func runScan(cmd *cobra.Command, args []string) error {
+	// Show banner
+	showBanner()
 	// Validate input
 	if listFile == "" && len(args) == 0 {
 		return fmt.Errorf("must provide either a subdomain argument or use -l/--list")
