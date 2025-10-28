@@ -300,28 +300,10 @@ func (s *Scanner) extractSnippet(body, pattern string) string {
 
 // printResult prints a single scan result with colors
 func (s *Scanner) printResult(result types.Result) {
-	status := result.Status
-	subdomain := result.Subdomain
-
-	// Color coding based on vulnerability status
-	var color string
-	switch status {
-	case "vulnerable":
-		color = "\033[32m" // Green
-	case "not vulnerable":
-		color = "\033[31m" // Red
-	case "error":
-		color = "\033[33m" // Yellow
-	default:
-		color = "\033[34m" // Blue
-	}
-
-	// Print colored status
-	fmt.Printf("%s[%s]%s %s", color, strings.ToUpper(status), "\033[0m", subdomain)
-
-	// Print evidence if vulnerable
+	// Only show detailed output for vulnerable subdomains
 	if result.Vulnerable && len(result.Evidence) > 0 {
-		fmt.Printf(" - %s", result.Evidence[0].Service)
+		// Print vulnerable result with details
+		fmt.Printf("\033[32m[VULNERABLE]\033[0m %s - %s", result.Subdomain, result.Evidence[0].Service)
 
 		// Show the specific pattern that matched
 		if result.Evidence[0].Pattern != "" {
@@ -336,14 +318,9 @@ func (s *Scanner) printResult(result types.Result) {
 		if len(result.Evidence) > 1 {
 			fmt.Printf(" (+%d more)", len(result.Evidence)-1)
 		}
+		fmt.Println()
 	}
-
-	// Print error if present
-	if result.Error != "" {
-		fmt.Printf(" - Error: %s", result.Error)
-	}
-
-	fmt.Println()
+	// For not vulnerable and errors, don't print anything (silent)
 }
 
 // Cleanup cleans up resources
