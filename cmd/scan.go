@@ -10,8 +10,8 @@ import (
 
 	"subtake/internal/config"
 	"subtake/internal/fingerprints"
-	"subtake/internal/output"
 	"subtake/internal/scanner"
+	"subtake/internal/types"
 
 	"github.com/spf13/cobra"
 )
@@ -92,20 +92,18 @@ func runScan(cmd *cobra.Command, args []string) error {
 	// Create scanner
 	s := scanner.New(cfg, fp)
 
-	// Scan subdomains
-	results := s.Scan(subdomains)
+	// Scan subdomains with real-time output
+	results := s.ScanWithRealtimeOutput(subdomains)
 
-	// Output results
+	// Output results to file if specified
 	if outputFile != "" {
 		err = outputToFile(results, outputFile)
 		if err != nil {
 			return fmt.Errorf("failed to write output file: %w", err)
 		}
 		if verbose {
-			fmt.Fprintf(os.Stderr, "Results written to %s\n", outputFile)
+			fmt.Fprintf(os.Stderr, "\nResults written to %s\n", outputFile)
 		}
-	} else {
-		outputToStdout(results)
 	}
 
 	return nil
@@ -129,7 +127,7 @@ func loadSubdomainsFromFile(filename string) ([]string, error) {
 	return subdomains, nil
 }
 
-func outputToFile(results []scanner.Result, filename string) error {
+func outputToFile(results []types.Result, filename string) error {
 	// Ensure directory exists
 	dir := filepath.Dir(filename)
 	if dir != "." {
@@ -150,8 +148,3 @@ func outputToFile(results []scanner.Result, filename string) error {
 	return encoder.Encode(results)
 }
 
-func outputToStdout(results []scanner.Result) {
-	for _, result := range results {
-		output.PrintResult(result)
-	}
-}

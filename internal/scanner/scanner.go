@@ -2,6 +2,7 @@ package scanner
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -9,36 +10,8 @@ import (
 	"subtake/internal/config"
 	"subtake/internal/fingerprints"
 	"subtake/internal/httpclient"
+	"subtake/internal/types"
 )
-
-// Result represents the result of scanning a subdomain
-type Result struct {
-	Subdomain     string                 `json:"subdomain"`
-	Vulnerable    bool                   `json:"vulnerable"`
-	Status        string                 `json:"status"`
-	Evidence      []Evidence             `json:"evidence,omitempty"`
-	Error         string                 `json:"error,omitempty"`
-	HTTPResponse  *HTTPResponse          `json:"http_response,omitempty"`
-	HTTPSResponse *HTTPResponse          `json:"https_response,omitempty"`
-	ScanTime      time.Time              `json:"scan_time"`
-}
-
-// Evidence represents evidence of a vulnerability
-type Evidence struct {
-	Service   string `json:"service"`
-	Pattern   string `json:"pattern"`
-	Notes     string `json:"notes"`
-	Snippet   string `json:"snippet"`
-}
-
-// HTTPResponse represents an HTTP response
-type HTTPResponse struct {
-	URL        string            `json:"url"`
-	StatusCode int               `json:"status_code"`
-	Headers    map[string]string `json:"headers"`
-	Body       string            `json:"body"`
-	Error      string            `json:"error,omitempty"`
-}
 
 // Scanner handles the scanning of subdomains
 type Scanner struct {
@@ -51,13 +24,13 @@ type Scanner struct {
 // New creates a new scanner
 func New(cfg *config.Config, fp *fingerprints.Fingerprints) *Scanner {
 	client := httpclient.New(cfg)
-	
+
 	var rateLimiter *time.Ticker
 	if cfg.Rate > 0 {
 		interval := time.Second / time.Duration(cfg.Rate)
 		rateLimiter = time.NewTicker(interval)
 	}
-	
+
 	return &Scanner{
 		config:       cfg,
 		fingerprints: fp,
@@ -67,9 +40,9 @@ func New(cfg *config.Config, fp *fingerprints.Fingerprints) *Scanner {
 }
 
 // Scan scans a list of subdomains
-func (s *Scanner) Scan(subdomains []string) []Result {
-	results := make([]Result, len(subdomains))
-	
+func (s *Scanner) Scan(subdomains []string) []types.Result {
+	results := make([]types.Result, len(subdomains))
+
 	if s.config.Rate > 0 {
 		// Use rate limiting
 		s.scanWithRateLimit(subdomains, results)
@@ -77,28 +50,55 @@ func (s *Scanner) Scan(subdomains []string) []Result {
 		// Use worker pool for concurrent scanning
 		s.scanWithWorkers(subdomains, results)
 	}
-	
+
 	return results
 }
 
-func (s *Scanner) scanWithRateLimit(subdomains []string, results []Result) {
+// ScanWithRealtimeOutput scans subdomains and outputs results in real-time
+func (s *Scanner) ScanWithRealtimeOutput(subdomains []string) []types.Result {
+	results := make([]types.Result, len(subdomains))
+
+	if s.config.Rate > 0 {
+		// Use rate limiting with real-time output
+		s.scanWithRateLimitRealtime(subdomains, results)
+	} else {
+		// Use worker pool with real-time output
+		s.scanWithWorkersRealtime(subdomains, results)
+	}
+
+	return results
+}
+
+func (s *Scanner) scanWithRateLimit(subdomains []string, results []types.Result) {
 	for i, subdomain := range subdomains {
 		if s.rateLimiter != nil {
 			<-s.rateLimiter.C
 		}
-		
+
 		results[i] = s.scanSubdomain(subdomain)
 	}
 }
 
-func (s *Scanner) scanWithWorkers(subdomains []string, results []Result) {
+func (s *Scanner) scanWithRateLimitRealtime(subdomains []string, results []types.Result) {
+	for i, subdomain := range subdomains {
+		if s.rateLimiter != nil {
+			<-s.rateLimiter.C
+		}
+
+		results[i] = s.scanSubdomain(subdomain)
+		// Print result immediately
+		s.printResult(results[i])
+	}
+}
+
+func (s *Scanner) scanWithWorkers(subdomains []string, results []types.Result) {
 	const maxWorkers = 20
 	subdomainChan := make(chan int, len(subdomains))
 	resultChan := make(chan struct {
 		index  int
-		result Result
+		result types.Result
 	}, len(subdomains))
-	
+
 	// Start workers
 	var wg sync.WaitGroup
 	for i := 0; i < maxWorkers; i++ {
@@ -109,43 +109,87 @@ func (s *Scanner) scanWithWorkers(subdomains []string, results []Result) {
 				result := s.scanSubdomain(subdomains[index])
 				resultChan <- struct {
 					index  int
-					result Result
+					result types.Result
 				}{index, result}
 			}
 		}()
 	}
-	
+
 	// Send work
 	for i := range subdomains {
 		subdomainChan <- i
 	}
 	close(subdomainChan)
-	
+
 	// Wait for completion
 	go func() {
 		wg.Wait()
 		close(resultChan)
 	}()
-	
+
 	// Collect results
 	for result := range resultChan {
 		results[result.index] = result.result
 	}
 }
 
-func (s *Scanner) scanSubdomain(subdomain string) Result {
-	result := Result{
+func (s *Scanner) scanWithWorkersRealtime(subdomains []string, results []types.Result) {
+	const maxWorkers = 20
+	subdomainChan := make(chan int, len(subdomains))
+	resultChan := make(chan struct {
+		index  int
+		result types.Result
+	}, len(subdomains))
+
+	// Start workers
+	var wg sync.WaitGroup
+	for i := 0; i < maxWorkers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for index := range subdomainChan {
+				result := s.scanSubdomain(subdomains[index])
+				resultChan <- struct {
+					index  int
+					result types.Result
+				}{index, result}
+			}
+		}()
+	}
+
+	// Send work
+	for i := range subdomains {
+		subdomainChan <- i
+	}
+	close(subdomainChan)
+
+	// Wait for completion
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
+
+	// Collect results and print immediately
+	for result := range resultChan {
+		results[result.index] = result.result
+		// Print result immediately
+		s.printResult(result.result)
+	}
+}
+
+func (s *Scanner) scanSubdomain(subdomain string) types.Result {
+	result := types.Result{
 		Subdomain: subdomain,
 		ScanTime:  time.Now(),
 	}
-	
+
 	// Try HTTPS first, then HTTP
 	httpsResult := s.tryProtocol(subdomain, "https")
 	httpResult := s.tryProtocol(subdomain, "http")
-	
+
 	result.HTTPSResponse = httpsResult
 	result.HTTPResponse = httpResult
-	
+
 	// Check for vulnerabilities
 	if httpsResult != nil && httpsResult.Error == "" {
 		result = s.checkVulnerabilities(result, httpsResult)
@@ -160,30 +204,41 @@ func (s *Scanner) scanSubdomain(subdomain string) Result {
 			result.Error = httpResult.Error
 		}
 	}
-	
+
 	return result
 }
 
-func (s *Scanner) tryProtocol(subdomain, protocol string) *HTTPResponse {
+func (s *Scanner) tryProtocol(subdomain, protocol string) *types.HTTPResponse {
 	url := fmt.Sprintf("%s://%s", protocol, subdomain)
-	
+
 	resp := s.httpClient.Get(url)
-	
-	httpResp := &HTTPResponse{
+
+	httpResp := &types.HTTPResponse{
 		URL:        url,
 		StatusCode: resp.StatusCode,
 		Headers:    resp.Headers,
 		Body:       resp.Body,
 	}
-	
+
 	if resp.Error != nil {
 		httpResp.Error = resp.Error.Error()
 	}
-	
+
 	return httpResp
 }
 
-func (s *Scanner) checkVulnerabilities(result Result, httpResp *HTTPResponse) Result {
+func (s *Scanner) checkVulnerabilities(result types.Result, httpResp *types.HTTPResponse) types.Result {
+	// Debug output in verbose mode
+	if s.config.Verbose {
+		fmt.Fprintf(os.Stderr, "Checking %s - Status: %d, Body length: %d\n", result.Subdomain, httpResp.StatusCode, len(httpResp.Body))
+		// Show first 1000 characters of body
+		bodyPreview := httpResp.Body
+		if len(bodyPreview) > 1000 {
+			bodyPreview = bodyPreview[:1000] + "..."
+		}
+		fmt.Fprintf(os.Stderr, "Body content: %q\n", bodyPreview)
+	}
+
 	// Check fingerprints against response body
 	matches, err := s.fingerprints.Match(httpResp.Body, httpResp.Headers)
 	if err != nil {
@@ -191,14 +246,14 @@ func (s *Scanner) checkVulnerabilities(result Result, httpResp *HTTPResponse) Re
 		result.Error = fmt.Sprintf("fingerprint matching error: %v", err)
 		return result
 	}
-	
+
 	if len(matches) > 0 {
 		result.Vulnerable = true
 		result.Status = "vulnerable"
-		
+
 		// Create evidence for each match
 		for _, match := range matches {
-			evidence := Evidence{
+			evidence := types.Evidence{
 				Service: match.Service,
 				Pattern: match.Pattern,
 				Notes:   match.Notes,
@@ -206,10 +261,17 @@ func (s *Scanner) checkVulnerabilities(result Result, httpResp *HTTPResponse) Re
 			}
 			result.Evidence = append(result.Evidence, evidence)
 		}
+
+		if s.config.Verbose {
+			fmt.Fprintf(os.Stderr, "Found %d matches for %s\n", len(matches), result.Subdomain)
+		}
 	} else {
 		result.Status = "not vulnerable"
+		if s.config.Verbose {
+			fmt.Fprintf(os.Stderr, "No matches found for %s\n", result.Subdomain)
+		}
 	}
-	
+
 	return result
 }
 
@@ -217,23 +279,71 @@ func (s *Scanner) extractSnippet(body, pattern string) string {
 	// Extract a snippet around the matched pattern
 	bodyLower := strings.ToLower(body)
 	patternLower := strings.ToLower(pattern)
-	
+
 	index := strings.Index(bodyLower, patternLower)
 	if index == -1 {
 		return ""
 	}
-	
+
 	start := index - 100
 	if start < 0 {
 		start = 0
 	}
-	
+
 	end := index + len(pattern) + 100
 	if end > len(body) {
 		end = len(body)
 	}
-	
+
 	return body[start:end]
+}
+
+// printResult prints a single scan result with colors
+func (s *Scanner) printResult(result types.Result) {
+	status := result.Status
+	subdomain := result.Subdomain
+
+	// Color coding based on vulnerability status
+	var color string
+	switch status {
+	case "vulnerable":
+		color = "\033[32m" // Green
+	case "not vulnerable":
+		color = "\033[31m" // Red
+	case "error":
+		color = "\033[33m" // Yellow
+	default:
+		color = "\033[34m" // Blue
+	}
+
+	// Print colored status
+	fmt.Printf("%s[%s]%s %s", color, strings.ToUpper(status), "\033[0m", subdomain)
+
+	// Print evidence if vulnerable
+	if result.Vulnerable && len(result.Evidence) > 0 {
+		fmt.Printf(" - %s", result.Evidence[0].Service)
+
+		// Show the specific pattern that matched
+		if result.Evidence[0].Pattern != "" {
+			// Truncate pattern if too long
+			pattern := result.Evidence[0].Pattern
+			if len(pattern) > 50 {
+				pattern = pattern[:47] + "..."
+			}
+			fmt.Printf(" (\"%s\")", pattern)
+		}
+
+		if len(result.Evidence) > 1 {
+			fmt.Printf(" (+%d more)", len(result.Evidence)-1)
+		}
+	}
+
+	// Print error if present
+	if result.Error != "" {
+		fmt.Printf(" - Error: %s", result.Error)
+	}
+
+	fmt.Println()
 }
 
 // Cleanup cleans up resources

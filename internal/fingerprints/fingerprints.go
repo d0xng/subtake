@@ -27,7 +27,7 @@ type Fingerprints struct {
 func Load(customFile string) (*Fingerprints, error) {
 	// Load default fingerprints
 	defaultFp := GetDefaultFingerprints()
-	
+
 	if customFile == "" {
 		return defaultFp, nil
 	}
@@ -53,14 +53,14 @@ func loadFromFile(filename string) (*Fingerprints, error) {
 	}
 
 	var fp Fingerprints
-	
+
 	// Try JSON first, then YAML
 	if strings.HasSuffix(strings.ToLower(filename), ".json") {
 		err = json.Unmarshal(data, &fp)
 	} else {
 		err = yaml.Unmarshal(data, &fp)
 	}
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse fingerprints file: %w", err)
 	}
@@ -71,18 +71,18 @@ func loadFromFile(filename string) (*Fingerprints, error) {
 // Match checks if the given content matches any fingerprint
 func (fp *Fingerprints) Match(content string, headers map[string]string) ([]Fingerprint, error) {
 	var matches []Fingerprint
-	
+
 	for _, fingerprint := range fp.Fingerprints {
 		matched, err := fingerprint.Match(content, headers)
 		if err != nil {
 			return nil, err
 		}
-		
+
 		if matched {
 			matches = append(matches, fingerprint)
 		}
 	}
-	
+
 	return matches, nil
 }
 
@@ -95,7 +95,7 @@ func (f *Fingerprint) Match(content string, headers map[string]string) (bool, er
 		}
 		return re.MatchString(content), nil
 	}
-	
+
 	// Case-insensitive string matching
 	return strings.Contains(strings.ToLower(content), strings.ToLower(f.Pattern)), nil
 }
@@ -113,11 +113,17 @@ func GetDefaultFingerprints() *Fingerprints {
 			},
 			{
 				Service: "GitHub Pages",
-				Pattern: "(?i)github pages.*not found|there isn't a github pages site",
-				Notes:   "GitHub Pages error variations",
+				Pattern: "There isn't a GitHub Pages site here",
+				Notes:   "GitHub Pages error without period",
+				Regex:   false,
+			},
+			{
+				Service: "GitHub Pages",
+				Pattern: "(?i)there isn't a github pages site",
+				Notes:   "GitHub Pages error case insensitive",
 				Regex:   true,
 			},
-			
+
 			// Vercel
 			{
 				Service: "Vercel",
@@ -125,7 +131,7 @@ func GetDefaultFingerprints() *Fingerprints {
 				Notes:   "Typical message when alias points to Vercel without deployment",
 				Regex:   true,
 			},
-			
+
 			// Netlify
 			{
 				Service: "Netlify",
@@ -145,7 +151,7 @@ func GetDefaultFingerprints() *Fingerprints {
 				Notes:   "Netlify error with reference in body",
 				Regex:   true,
 			},
-			
+
 			// AWS S3
 			{
 				Service: "AWS S3",
@@ -165,7 +171,7 @@ func GetDefaultFingerprints() *Fingerprints {
 				Notes:   "AWS S3 error variations",
 				Regex:   true,
 			},
-			
+
 			// CloudFront
 			{
 				Service: "CloudFront",
@@ -179,7 +185,7 @@ func GetDefaultFingerprints() *Fingerprints {
 				Notes:   "CloudFront error variations",
 				Regex:   true,
 			},
-			
+
 			// Fastly
 			{
 				Service: "Fastly",
@@ -199,7 +205,7 @@ func GetDefaultFingerprints() *Fingerprints {
 				Notes:   "Fastly generic error",
 				Regex:   false,
 			},
-			
+
 			// Heroku
 			{
 				Service: "Heroku",
@@ -219,7 +225,7 @@ func GetDefaultFingerprints() *Fingerprints {
 				Notes:   "Heroku error variations",
 				Regex:   true,
 			},
-			
+
 			// GitLab Pages
 			{
 				Service: "GitLab Pages",
@@ -233,7 +239,7 @@ func GetDefaultFingerprints() *Fingerprints {
 				Notes:   "GitLab Pages error variations",
 				Regex:   true,
 			},
-			
+
 			// Azure Blob Storage
 			{
 				Service: "Azure Blob Storage",
@@ -253,7 +259,7 @@ func GetDefaultFingerprints() *Fingerprints {
 				Notes:   "Azure error variations",
 				Regex:   true,
 			},
-			
+
 			// Firebase / GCP Hosting
 			{
 				Service: "Firebase Hosting",
@@ -267,7 +273,7 @@ func GetDefaultFingerprints() *Fingerprints {
 				Notes:   "Firebase/GCP hosting error variations",
 				Regex:   true,
 			},
-			
+
 			// Surge
 			{
 				Service: "Surge",
@@ -281,11 +287,11 @@ func GetDefaultFingerprints() *Fingerprints {
 				Notes:   "Surge error variations",
 				Regex:   true,
 			},
-			
-			// Generic patterns
+
+			// Generic patterns (moved to end to avoid interfering with specific patterns)
 			{
 				Service: "Generic",
-				Pattern: "(?i)(site not found|no such site|project not found|there isn't a .* site here|no such app|the specified bucket does not exist|no such host|this page is not available)",
+				Pattern: "(?i)(site not found|no such site|project not found|no such app|the specified bucket does not exist|no such host|this page is not available)",
 				Notes:   "Generic hosting service error patterns",
 				Regex:   true,
 			},
