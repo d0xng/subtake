@@ -1,0 +1,166 @@
+{
+  "fingerprints": [
+    {
+      "service": "GitHub Pages",
+      "pattern": "There isn't a GitHub Pages site here.",
+      "notes": "Indicates a CNAME pointing to GitHub Pages without content",
+      "regex": false
+    },
+    {
+      "service": "GitHub Pages",
+      "pattern": "(?i)github pages.*not found|there isn't a github pages site",
+      "notes": "GitHub Pages error variations",
+      "regex": true
+    },
+    {
+      "service": "Vercel",
+      "pattern": "(?i)project not found|there isn't a vercel deployment here|no such host",
+      "notes": "Typical message when alias points to Vercel without deployment",
+      "regex": true
+    },
+    {
+      "service": "Netlify",
+      "pattern": "No such site",
+      "notes": "Netlify default page text",
+      "regex": false
+    },
+    {
+      "service": "Netlify",
+      "pattern": "There isn't a site here",
+      "notes": "Netlify default page text variation",
+      "regex": false
+    },
+    {
+      "service": "Netlify",
+      "pattern": "(?i)netlify.*not found|404.*netlify",
+      "notes": "Netlify error with reference in body",
+      "regex": true
+    },
+    {
+      "service": "AWS S3",
+      "pattern": "NoSuchBucket",
+      "notes": "AWS S3 XML error for non-existent bucket",
+      "regex": false
+    },
+    {
+      "service": "AWS S3",
+      "pattern": "The specified bucket does not exist",
+      "notes": "AWS S3 error message",
+      "regex": false
+    },
+    {
+      "service": "AWS S3",
+      "pattern": "(?i)aws.*s3.*error|amazon.*s3.*not found",
+      "notes": "AWS S3 error variations",
+      "regex": true
+    },
+    {
+      "service": "CloudFront",
+      "pattern": "The request could not be satisfied",
+      "notes": "CloudFront error message",
+      "regex": false
+    },
+    {
+      "service": "CloudFront",
+      "pattern": "(?i)cloudfront.*error|aws.*cloudfront",
+      "notes": "CloudFront error variations",
+      "regex": true
+    },
+    {
+      "service": "Fastly",
+      "pattern": "Fastly error: unknown domain",
+      "notes": "Fastly error for unknown domain",
+      "regex": false
+    },
+    {
+      "service": "Fastly",
+      "pattern": "Fastly error: unknown service",
+      "notes": "Fastly error for unknown service",
+      "regex": false
+    },
+    {
+      "service": "Fastly",
+      "pattern": "Fastly has an error",
+      "notes": "Fastly generic error",
+      "regex": false
+    },
+    {
+      "service": "Heroku",
+      "pattern": "no such app",
+      "notes": "Heroku app not found",
+      "regex": false
+    },
+    {
+      "service": "Heroku",
+      "pattern": "There is no app configured at that hostname",
+      "notes": "Heroku custom domain removed",
+      "regex": false
+    },
+    {
+      "service": "Heroku",
+      "pattern": "(?i)heroku.*not found|heroku.*error",
+      "notes": "Heroku error variations",
+      "regex": true
+    },
+    {
+      "service": "GitLab Pages",
+      "pattern": "The page you were looking for doesn't exist",
+      "notes": "GitLab Pages 404 with GitLab references",
+      "regex": false
+    },
+    {
+      "service": "GitLab Pages",
+      "pattern": "(?i)gitlab.*pages.*not found|gitlab.*error",
+      "notes": "GitLab Pages error variations",
+      "regex": true
+    },
+    {
+      "service": "Azure Blob Storage",
+      "pattern": "The specified container does not exist",
+      "notes": "Azure Blob Storage error",
+      "regex": false
+    },
+    {
+      "service": "Azure Blob Storage",
+      "pattern": "Server failed to authenticate the request",
+      "notes": "Azure authentication error",
+      "regex": false
+    },
+    {
+      "service": "Azure Blob Storage",
+      "pattern": "(?i)azure.*storage.*error|microsoft.*azure",
+      "notes": "Azure error variations",
+      "regex": true
+    },
+    {
+      "service": "Firebase Hosting",
+      "pattern": "Project Not Found",
+      "notes": "Firebase project not found",
+      "regex": false
+    },
+    {
+      "service": "Firebase Hosting",
+      "pattern": "(?i)firebase.*hosting.*error|gcp.*hosting.*error",
+      "notes": "Firebase/GCP hosting error variations",
+      "regex": true
+    },
+    {
+      "service": "Surge",
+      "pattern": "project not found",
+      "notes": "Surge project not found",
+      "regex": false
+    },
+    {
+      "service": "Surge",
+      "pattern": "(?i)surge.*error|surge.*not found",
+      "notes": "Surge error variations",
+      "regex": true
+    },
+    {
+      "service": "Generic",
+      "pattern": "(?i)(site not found|no such site|project not found|there isn't a .* site here|no such app|the specified bucket does not exist|no such host|this page is not available)",
+      "notes": "Generic hosting service error patterns",
+      "regex": true
+    }
+  ]
+}

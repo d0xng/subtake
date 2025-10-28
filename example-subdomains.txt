@@ -1,0 +1,4 @@
+# Example subdomains for testing
+test.example.com
+subdomain.example.com
+api.example.com
