@@ -17,14 +17,14 @@ import (
 )
 
 var (
-	listFile      string
-	outputFile    string
+	listFile         string
+	outputFile       string
 	fingerprintsFile string
-	userAgent     string
-	insecure      bool
-	rate          int
-	timeoutRetries int
-	timeout       int
+	userAgent        string
+	insecure         bool
+	rate             int
+	timeoutRetries   int
+	timeout          int
 )
 
 // scanCmd represents the scan command
@@ -103,7 +103,7 @@ func runScan(cmd *cobra.Command, args []string) error {
 				vulnerableCount++
 			}
 		}
-		
+
 		err = outputToFile(results, outputFile)
 		if err != nil {
 			return fmt.Errorf("failed to write output file: %w", err)
@@ -142,7 +142,7 @@ func outputToFile(results []types.Result, filename string) error {
 			vulnerableResults = append(vulnerableResults, result)
 		}
 	}
-	
+
 	// Ensure directory exists
 	dir := filepath.Dir(filename)
 	if dir != "." {
@@ -162,4 +162,3 @@ func outputToFile(results []types.Result, filename string) error {
 	encoder.SetIndent("", "  ")
 	return encoder.Encode(vulnerableResults)
 }
-

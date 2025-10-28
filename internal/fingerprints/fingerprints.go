@@ -123,6 +123,12 @@ func GetDefaultFingerprints() *Fingerprints {
 				Notes:   "GitHub Pages error case insensitive",
 				Regex:   true,
 			},
+			{
+				Service: "GitHub Pages/Firebase",
+				Pattern: "Site not found",
+				Notes:   "GitHub Pages or Firebase 404 title",
+				Regex:   false,
+			},
 
 			// Vercel
 			{
