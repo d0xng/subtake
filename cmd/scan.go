@@ -97,12 +97,19 @@ func runScan(cmd *cobra.Command, args []string) error {
 
 	// Output results to file if specified
 	if outputFile != "" {
+		vulnerableCount := 0
+		for _, result := range results {
+			if result.Vulnerable && result.Status == "vulnerable" {
+				vulnerableCount++
+			}
+		}
+		
 		err = outputToFile(results, outputFile)
 		if err != nil {
 			return fmt.Errorf("failed to write output file: %w", err)
 		}
 		if verbose {
-			fmt.Fprintf(os.Stderr, "\nResults written to %s\n", outputFile)
+			fmt.Fprintf(os.Stderr, "\nResults written to %s (%d vulnerable subdomains)\n", outputFile, vulnerableCount)
 		}
 	}
 
@@ -128,6 +135,14 @@ func loadSubdomainsFromFile(filename string) ([]string, error) {
 }
 
 func outputToFile(results []types.Result, filename string) error {
+	// Filter only vulnerable results
+	vulnerableResults := make([]types.Result, 0)
+	for _, result := range results {
+		if result.Vulnerable && result.Status == "vulnerable" {
+			vulnerableResults = append(vulnerableResults, result)
+		}
+	}
+	
 	// Ensure directory exists
 	dir := filepath.Dir(filename)
 	if dir != "." {
@@ -145,6 +160,6 @@ func outputToFile(results []types.Result, filename string) error {
 
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
-	return encoder.Encode(results)
+	return encoder.Encode(vulnerableResults)
 }
 

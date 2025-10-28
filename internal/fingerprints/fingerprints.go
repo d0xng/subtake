@@ -291,7 +291,7 @@ func GetDefaultFingerprints() *Fingerprints {
 			// Generic patterns (moved to end to avoid interfering with specific patterns)
 			{
 				Service: "Generic",
-				Pattern: "(?i)(site not found|no such site|project not found|no such app|the specified bucket does not exist|no such host|this page is not available)",
+				Pattern: "(?i)(no such site|project not found|no such app|the specified bucket does not exist|no such host|this page is not available)",
 				Notes:   "Generic hosting service error patterns",
 				Regex:   true,
 			},
